@@ -1,0 +1,3 @@
+qa:
+  min_pixels: 262144   # 512*512
+  blur_threshold: 50   # TODO: Laplacian var heuristic

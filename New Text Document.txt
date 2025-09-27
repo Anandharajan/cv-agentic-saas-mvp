@@ -1,0 +1,250 @@
+Overview
+
+Create a complete single-repo MVP for computer vision tasks (detection, recognition, segmentation) with training, evaluation, ONNX/TensorRT export, a Dockerized inference service, CI smoke tests, and release-ready artifacts using Codex CLI. The instructions below produce a GitHub repo skeleton, key scripts, and CI workflows so Codex can implement the full project automatically.
+
+Prerequisites
+
+Codex CLI is installed and authenticated to create repos, commit files, and push to GitHub.
+
+A local git user/email is configured for commits.
+
+Replace placeholders like <GITHUB_ORG_OR_USER>, <REPO_NAME>, and <YOUR_EMAIL> before running.
+
+Codex CLI command sequence
+
+Run these commands in sequence (replace placeholders). They:
+
+create the repo,
+
+add files and directories,
+
+commit and push the initial skeleton.
+
+# variables (replace)
+GITHUB_USER="<GITHUB_ORG_OR_USER>"
+REPO_NAME="cv-mvp"
+EMAIL="<YOUR_EMAIL>"
+
+# create repo via codex (public)
+codex repo create $GITHUB_USER/$REPO_NAME --public --description "CV MVP: detection, recognition, segmentation + inference, optimization, CI"
+
+# clone, enter
+git clone https://github.com/$GITHUB_USER/$REPO_NAME.git
+cd $REPO_NAME
+
+# set git identity for this repo
+git config user.email "$EMAIL"
+git config user.name "$GITHUB_USER"
+
+# create directories
+mkdir -p src/models src/data src/utils tools examples scripts docs .github/workflows results
+
+# create files (list)
+touch README.md LICENSE .gitignore requirements.txt environment.yml Dockerfile \
+  src/train.py src/eval.py src/infer.py src/models/__init__.py src/models/backbones.py src/models/detector.py src/models/segmenter.py src/models/classifier.py \
+  src/data/loader.py src/utils/logger.py src/utils/metrics.py \
+  tools/export_onnx.py tools/optimize_tensorrt.py \
+  scripts/download_datasets.py scripts/benchmark_inference.py scripts/run_experiment.sh \
+  examples/demo_client.py examples/edge_run.py \
+  docs/architecture.md docs/deployment.md docs/benchmarks.md \
+  .github/workflows/ci.yml .github/workflows/release.yml
+
+# add minimal content via codex file writes (next step)
+
+Files and templates (minimal content — implementable by Codex)
+
+Below are concise file templates to write into the repo. Codex should create these exact files with the content shown.
+
+README.md
+
+# CV MVP
+
+Single-repo MVP implementing detection, recognition, and segmentation with training, export (ONNX/TensorRT), Dockerized inference, CI, and docs.
+
+Quickstart
+1. pip install -r requirements.txt
+2. python scripts/download_datasets.py --dest data/
+3. python src/train.py --task detect --config configs/detect_small.yaml
+4. python tools/export_onnx.py --ckpt runs/detect/best.pt --out models/detect.onnx
+5. docker build -t cv-mvp . && docker run -p 8080:8080 cv-mvp
+
+.gitignore
+
+__pycache__/
+*.pyc
+.env
+data/
+runs/
+models/
+results/
+*.log
+.vscode/
+.DS_Store
+
+requirements.txt
+
+torch>=1.12
+torchvision
+onnx
+onnxruntime
+fastapi
+uvicorn
+pydantic
+opencv-python
+albumentations
+numpy
+Pillow
+tqdm
+yaml
+
+Dockerfile
+
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+ENV PYTHONUNBUFFERED=1
+EXPOSE 8080
+CMD ["uvicorn", "src.infer:app", "--host", "0.0.0.0", "--port", "8080"]
+
+src/train.py (minimal scaffold)
+
+import argparse
+from src.data.loader import build_dataloader
+from src.models import get_model
+from src.utils.logger import setup_logger
+import torch
+
+def train(args):
+    logger = setup_logger()
+    loader = build_dataloader(args.task, split="train", small=args.small)
+    model = get_model(args.task, pretrained=False)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
+    # minimal training loop (1 epoch skeleton)
+    for images, targets in loader:
+        images = images.to(device)
+        # forward/backward placeholder
+        break
+    print("TRAIN: placeholder done")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task", choices=["detect","segment","classify"], required=True)
+    parser.add_argument("--small", action="store_true", help="use tiny dataset for CI")
+    args = parser.parse_args()
+    train(args)
+
+src/infer.py (FastAPI service)
+
+from fastapi import FastAPI, File, UploadFile
+from pydantic import BaseModel
+import numpy as np
+import cv2
+from io import BytesIO
+from PIL import Image
+import uvicorn
+app = FastAPI(title="CV MVP Inference")
+
+@app.post("/infer/{task}")
+async def infer(task: str, file: UploadFile = File(...)):
+    content = await file.read()
+    img = Image.open(BytesIO(content)).convert("RGB")
+    # placeholder inference response
+    return {"task": task, "status": "ok", "shape": img.size}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8080)
+
+scripts/download_datasets.py (download skeleton)
+
+import argparse, os
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dest", default="data/")
+    args = parser.parse_args()
+    os.makedirs(args.dest, exist_ok=True)
+    # placeholder: create tiny sample for CI
+    open(os.path.join(args.dest, "sample.txt"), "w").write("tiny sample")
+    print("datasets prepared (tiny sample)")
+
+if __name__ == "__main__":
+    main()
+
+tools/export_onnx.py (skeleton)
+
+import argparse
+def export_onnx():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ckpt")
+    parser.add_argument("--out")
+    args = parser.parse_args()
+    # placeholder: create an empty file to represent exported model
+    open(args.out, "wb").close()
+    print("exported ONNX:", args.out)
+
+if __name__ == "__main__":
+    export_onnx()
+
+.github/workflows/ci.yml
+
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install
+        run: pip install -r requirements.txt
+      - name: Prepare data
+        run: python scripts/download_datasets.py --dest data/
+      - name: Run smoke training
+        run: python src/train.py --task classify --small
+      - name: Start service smoke
+        run: python -c "import uvicorn, subprocess; subprocess.Popen(['python','src/infer.py'])"
+
+docs/architecture.md (short)
+
+# Architecture
+- Tasks: detection (Faster-RCNN/YOLO), recognition (EfficientNet), segmentation (DeepLabv3/UNet)
+- Training: PyTorch, AMP, config-driven
+- Export: TorchScript -> ONNX -> TensorRT
+- Deployment: FastAPI Docker service, edge runner with ONNXRuntime
+
+Commit and push using Codex CLI (finalize)
+
+git add .
+git commit -m "Initial CV MVP skeleton: training, infer service, export tools, CI"
+git push origin main
+
+How to run after creation (commands to include in README)
+
+Install: pip install -r requirements.txt
+
+Prepare data: python scripts/download_datasets.py --dest data/
+
+Smoke train: python src/train.py --task classify --small
+
+Run service: uvicorn src.infer:app --host 0.0.0.0 --port 8080
+
+Export ONNX: python tools/export_onnx.py --ckpt runs/classify/best.pt --out models/classify.onnx
+
+Final notes and next steps for Codex
+
+Implement full model code in src/models: Detector (YOLO/Faster-RCNN wrapper), Classifier (EfficientNet), Segmenter (DeepLabV3/UNet) with config-driven hyperparams.
+
+Add evaluation scripts computing mAP, mIoU, top-k accuracy in src/utils/metrics.py.
+
+Add ONNX numeric parity checks, quantization routines, TensorRT optimization in tools/.
+
+Implement thorough GitHub Actions: build Docker, run containerized smoke tests, and release artifacts.
+
+After pushing the skeleton, Codex should iterate by replacing placeholders with full implementations, unit tests, and benchmarks.
+
+Proceed now: run the command sequence above with Codex CLI to create the repo and initial commit.

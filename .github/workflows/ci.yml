@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+      - name: Smoke scripts
+        run: |
+          python scripts/download_datasets.py --dest data/
+          python src/train.py --task classify --small
+      - name: Start API
+        run: |
+          nohup uvicorn src.infer:app --host 0.0.0.0 --port 8080 &
+          sleep 3
+      - name: Curl /process
+        run: |
+          python - << 'PY'
+          import base64, json, urllib.request
+          png_base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII='
+          body = base64.b64decode(png_base64)
+          boundary='----WebKitFormBoundary7MA4YWxkTrZu0gW'
+          data=(f'--{boundary}\r\n'
+                f'Content-Disposition: form-data; name="file"; filename="tiny.png"\r\n'
+                f'Content-Type: image/png\r\n\r\n').encode()+body+f'\r\n--{boundary}--\r\n'.encode()
+          req=urllib.request.Request('http://127.0.0.1:8080/process', data=data, headers={'Content-Type': f'multipart/form-data; boundary={boundary}'})
+          print(urllib.request.urlopen(req).read().decode())
+          PY

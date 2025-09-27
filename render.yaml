@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cv-agentic-saas-mvp
+    env: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
