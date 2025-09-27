@@ -1,0 +1,26 @@
+name: Vercel Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ secrets.VERCEL_DEPLOY_HOOK_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel Deploy Hook
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          set -e
+          echo "Triggering Vercel deploy hook..."
+          if curl -fsSL "$HOOK" >/dev/null 2>&1; then
+            echo "Vercel GET webhook triggered."
+            exit 0
+          fi
+          curl -fsSL -X POST "$HOOK" -H 'Content-Type: application/json' -d '{}' >/dev/null
+          echo "Vercel POST webhook triggered."

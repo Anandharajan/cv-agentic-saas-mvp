@@ -1,5 +1,10 @@
 # CV Agentic SaaS MVP
 
+[![CI](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/ci.yml/badge.svg)](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/ci.yml)
+[![Docker Publish](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/docker-publish.yml)
+[![Release](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/release.yml/badge.svg)](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/release.yml)
+[![Railway Deploy](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/railway-deploy.yml/badge.svg)](https://github.com/Anandharajan/cv-agentic-saas-mvp/actions/workflows/railway-deploy.yml)
+
 Minimal agentic computer vision SaaS: background segmentation, image QA, and basic tagging with a FastAPI service.
 
 Quickstart
@@ -25,7 +30,7 @@ Run from GHCR
 
 One-click cloud deploy (optional)
 - Connect this repo to Render or Railway as a Docker service; use `Dockerfile` and port `8080`.
-- Or use Fly.io with a `fly.toml` and deploy via GitHub Actions (ask to scaffold).
+
 
 ## Fly.io Deploy via GitHub Actions
 
@@ -42,3 +47,40 @@ Setup
 Deploy
 - Push to `main` → Actions → Fly Deploy runs and rolls out the app.
 - After first deploy, find your URL via the job logs or `flyctl status -a <app>`.
+
+## Vercel Deploy
+
+Recommended approaches
+- GitHub Integration (preferred): connect this repo in Vercel. Vercel will build and deploy on push. Configure the project to use the `Dockerfile` if your Vercel plan supports Docker-based deployments; otherwise use a Python Serverless Function wrapper (see below).
+- Deploy Hook (added): workflow `.github/workflows/vercel-deploy.yml` calls a Vercel Deploy Hook on pushes/tags when `VERCEL_DEPLOY_HOOK_URL` secret is set.
+
+Setup (GitHub Integration)
+- Create a Vercel account and install the Vercel GitHub App.
+- Import this repository and select branch `main`.
+- If Docker builds are supported on your plan: use the provided `Dockerfile` and set the port to `8080`.
+- If not, use a Serverless Function wrapper:
+  - Create `api/process.py` in a separate branch to call into `src.agents.skills.process_single` and handle uploads; move `templates/index.html` to `public/index.html` for static hosting. I can scaffold this if you want.
+
+Setup (Deploy Hook)
+- In Vercel → Project → Settings → Git → Deploy Hooks → Create Hook for branch `main` and copy the URL.
+- In GitHub → Repo → Settings → Secrets and variables → Actions → New repository secret:
+  - `VERCEL_DEPLOY_HOOK_URL` = the copied Deploy Hook URL
+- On push or tag, the `Vercel Deploy` workflow triggers the hook to redeploy.
+
+Open the app
+- After Vercel finishes building, open the assigned URL. The UI is at `/` and `POST /process` accepts image uploads.
+
+## Railway Deploy (optional)
+
+What it does
+- Workflow `.github/workflows/railway-deploy.yml` deploys to Railway on pushes to `main` using the Railway CLI.
+
+Setup
+- Create a Railway account and a new project.
+- Locally: `npm i -g @railway/cli`, then in this repo run `railway init` (or `railway link`) to connect the project; commit the generated `.railway/` directory.
+- In GitHub → Repo → Settings → Secrets and variables → Actions → New repository secret:
+  - `RAILWAY_TOKEN` = your Railway deploy token (`railway login` then `railway tokens create`).
+
+Deploy
+- Push to `main` → Actions → Railway Deploy runs and rolls out the app.
+- The workflow will skip if either `RAILWAY_TOKEN` is missing or `.railway/` is not present.
