@@ -15,6 +15,12 @@ Minimal agentic computer vision SaaS: background segmentation, image QA, and bas
 
 See `CVAAS.md` for the playbook and roadmap.
 
+## MVP Capabilities
+- Background cleanup via Otsu-style masking that composites the subject onto a clean white canvas.
+- Quality heuristics for blur, brightness, and resolution with configurable thresholds (`configs/thresholds.yaml`).
+- Attribute tagging that reports dominant color, orientation, size bucket, and background cleanliness.
+
+
 ## GitHub Deployment (GHCR)
 
 - On push to `main`, GitHub Actions builds and pushes a Docker image to `ghcr.io/<OWNER>/cv-agentic-saas-mvp:latest`.

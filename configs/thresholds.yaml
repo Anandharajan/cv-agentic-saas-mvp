@@ -1,3 +1,5 @@
 qa:
   min_pixels: 262144   # 512*512
   blur_threshold: 50   # TODO: Laplacian var heuristic
+  min_brightness: 30   # acceptable lower bound
+  max_brightness: 235  # acceptable upper bound

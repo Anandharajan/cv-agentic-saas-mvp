@@ -9,6 +9,7 @@ run:
 test:
 	python scripts/download_datasets.py --dest data/
 	python src/train.py --task classify --small
+	pytest
 
 docker:
 	docker build -t cv-agentic-saas-mvp:local .

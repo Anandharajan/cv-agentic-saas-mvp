@@ -14,11 +14,14 @@ jobs:
           python-version: '3.11'
       - name: Install minimal runtime deps
         run: |
-          pip install fastapi uvicorn pydantic pillow numpy pyyaml
+          pip install fastapi uvicorn pydantic pillow numpy pyyaml opencv-python pytest
       - name: Smoke scripts
         run: |
           python scripts/download_datasets.py --dest data/
           python src/train.py --task classify --small
+      - name: Run unit tests
+        run: |
+          pytest
       - name: Start API
         run: |
           nohup uvicorn src.infer:app --host 0.0.0.0 --port 8080 &
